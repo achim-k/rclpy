@@ -46,6 +46,8 @@ Subscription::Subscription(
     throw py::error_already_set();
   }
 
+  take_mutex_ = std::make_shared<std::mutex>();
+
   rcl_subscription_options_t subscription_ops = rcl_subscription_get_default_options();
 
   if (!pyqos_profile.is_none()) {
@@ -98,8 +100,13 @@ Subscription::take_message(py::object pymsg_type, bool raw)
   rmw_message_info_t message_info;
   if (raw) {
     SerializedMessage taken{rcutils_get_default_allocator()};
-    rcl_ret_t ret = rcl_take_serialized_message(
+    rcl_ret_t ret;
+    Py_BEGIN_ALLOW_THREADS
+    take_mutex_->lock();
+    ret = rcl_take_serialized_message(
       rcl_subscription_.get(), &taken.rcl_msg, &message_info, NULL);
+    take_mutex_->unlock();
+    Py_END_ALLOW_THREADS
     if (RCL_RET_OK != ret) {
       if (RCL_RET_BAD_ALLOC == ret) {
         rcl_reset_error();

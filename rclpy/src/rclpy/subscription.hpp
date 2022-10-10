@@ -20,6 +20,7 @@
 #include <rcl/subscription.h>
 
 #include <memory>
+#include <mutex>
 #include <string>
 
 #include "destroyable.hpp"
@@ -99,6 +100,7 @@ public:
 private:
   Node node_;
   std::shared_ptr<rcl_subscription_t> rcl_subscription_;
+  std::shared_ptr<std::mutex> take_mutex_;
 };
 /// Define a pybind11 wrapper for an rclpy::Service
 void define_subscription(py::object module);
